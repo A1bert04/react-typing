@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const wordsArray = [
     "react", "typescript", "javascript", "html", "css", "frontend", "backend",
@@ -8,6 +8,8 @@ const wordsArray = [
     "context", "module", "babel", "var", "realsociedad", "barça", "lewandoski"
 ];
 
+const MAX_TIME = 60
+
 export default function App() {
 
     type phases = "begin" | "game" | "end"
@@ -16,13 +18,16 @@ export default function App() {
     const [currentWord, setCurrentWord] = useState<string>("react")
     const [typedWord, setTypedWord] = useState<string>()
     const [score, setScore] = useState<{right: number, wrong: number}>({right: 0, wrong: 0})
+    const [chars, setChars] = useState(0)
+    const inputRef = useRef<HTMLInputElement>(null)
 
     const handleBegin = () => {
         changeWord()
         setPhase("game")
         setTypedWord("")
-        setChrono(60)
+        setChrono(MAX_TIME)
         setScore({right: 0, wrong: 0})
+        setChars(0)
     }
 
     const changeWord = () => {
@@ -33,6 +38,7 @@ export default function App() {
     const handleSubmit = () => {
         console.log(typedWord, currentWord)
         if (typedWord === currentWord) {
+            setChars(chars + currentWord.length)
             setScore({right: score.right + 1, wrong: score.wrong})
         } else {
             setScore({right: score.right, wrong: score.wrong + 1})
@@ -54,6 +60,14 @@ export default function App() {
         }
     }, [chrono, phase])
 
+    useEffect(() => {
+        if (phase === "game") {
+            if (inputRef.current) {
+                inputRef.current.focus()
+            }
+        }
+    }, [phase])
+
 
     return (
         <div className="w-screen h-screen flex flex-col items-center justify-center bg-zinc-100 text-slate-800 gap-20">
@@ -73,6 +87,7 @@ export default function App() {
                 </div>
                 <div className='flex flex-row justify-center'>
                 <input type="text" 
+                    ref={inputRef}
                     className='text-2xl p-4 text-center border-b-2 border-slate-800 rounded-md bg-transparent w-96' 
                     onChange={(e) => setTypedWord(e.target.value)}
                     onKeyDown={(e) => {
@@ -87,9 +102,11 @@ export default function App() {
             { phase === "begin" && <BeginButton handleBegin={handleBegin} />}
             { phase === "end" && <div className='flex flex-col gap-4'>
                 <div className='text-4xl text-center'>Fin del juego</div>
+                <div className='text-2xl text-center'>Has escrito de media {(chars/MAX_TIME).toFixed(1)} caracteres por segundo y {score.right + score.wrong} WPM</div>
                 <div className='text-2xl text-center'>Tu puntuación ha sido de {score.right} aciertos y {score.wrong} fallos</div>
                 <BeginButton handleBegin={handleBegin} />
             </div>}
+            <div className='absolute text-sm text-gray-400 bottom-4 right-4'>Creado por Albert Bru</div>
         </div>
     )
 }
